@@ -1,0 +1,25 @@
+{
+  "include": [
+    "ngram_keylogger"
+  ],
+
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__"
+  ],
+
+  "ignore": [
+    "src/oldstuff"
+  ],
+
+  "defineConstant": {
+    "DEBUG": true
+  },
+
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "reportUnknownArgumentType":false,
+  "reportAny":false,
+  "reportUnusedCallResult":false,
+  "reportImplicitStringConcatenation":false
+}

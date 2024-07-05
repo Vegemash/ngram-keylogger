@@ -9,10 +9,10 @@ import click
 
 import ngram_keylogger
 
-DEFAULT_PATH = '/var/lib/ngram-keylogger/db.sqlite'
+DEFAULT_PATH = "/var/lib/ngram-keylogger/db.sqlite"
 
-SAVE_MAX = 3000    # actions. Protects against differential DB analysis.
-SAVE_MIN = 300     # actions. On exit you might not have enough; discards them.
+SAVE_MAX = 3000  # actions. Protects against differential DB analysis.
+SAVE_MIN = 300  # actions. On exit you might not have enough; discards them.
 
 
 class Context:
@@ -30,6 +30,7 @@ class Context:
     That might mean some filtering during the analysis,
     but better have that data than not have it.
     """
+
     def __init__(self, db, context):
         self.name = context
         self._db = db
@@ -38,7 +39,7 @@ class Context:
         self._unsaved_actions = 0
 
     def flush_pipeline(self):
-        """ Called when inactivity/context switch is detected. """
+        """Called when inactivity/context switch is detected."""
         for _ in range(3):
             self.account_for_action(ngram_keylogger.NOTHING)
 
@@ -59,18 +60,20 @@ class Context:
             counter[tuple(ngram)] += 1
             return True
 
-
     def save_to_db(self):
         if not self._unsaved_actions:
             return
         if self._unsaved_actions < SAVE_MIN:
-            click.echo(f'Context {self.name}: '
-                       f'refusing to save {self._unsaved_actions} '
-                       f'< {SAVE_MIN} actions to disk.')
+            click.echo(
+                f"Context {self.name}: "
+                f"refusing to save {self._unsaved_actions} "
+                f"< {SAVE_MIN} actions to disk."
+            )
             return
         self._db.increment_on_disk(self.name, self._in_memory_counters)
-        click.echo(f'Context {self.name}: '
-                   f'saved {self._unsaved_actions} actions to disk.')
+        click.echo(
+            f"Context {self.name}: " f"saved {self._unsaved_actions} actions to disk."
+        )
         self._unsaved_actions = 0
         self._in_memory_counters = [collections.Counter() for i in range(3)]
 
@@ -78,25 +81,26 @@ class Context:
 class StatsDB:
     def __init__(self, path):
         self._path = path
-        click.echo(f'Checking database {self._path}...')
+        click.echo(f"Checking database {self._path}...")
         if os.path.dirname(self._path):
             os.makedirs(os.path.dirname(self._path), exist_ok=True)
         with sqlite3.connect(self._path) as con:
-            for n, table in ((1, 'keys'), (2, 'bigrams'), (3, 'trigrams')):
-                a_column_names = ', '.join(f'a{i + 1}' for i in range(n))
-                a_column_defs = ', '.join(f'a{i + 1} TEXT NOT NULL'
-                                          for i in range(n))
-                con.execute(f'CREATE TABLE IF NOT EXISTS {table} '
-                            '(count INT NOT NULL, context TEXT NOT NULL, '
-                            f'{a_column_defs}, '
-                            f'PRIMARY KEY (context, {a_column_names}))')
+            for n, table in ((1, "keys"), (2, "bigrams"), (3, "trigrams")):
+                a_column_names = ", ".join(f"a{i + 1}" for i in range(n))
+                a_column_defs = ", ".join(f"a{i + 1} TEXT NOT NULL" for i in range(n))
+                _ = con.execute(
+                    f"CREATE TABLE IF NOT EXISTS {table} "
+                    "(count INT NOT NULL, context TEXT NOT NULL, "
+                    f"{a_column_defs}, "
+                    f"PRIMARY KEY (context, {a_column_names}))"
+                )
         os.chmod(self._path, stat.S_IREAD | stat.S_IWRITE)
-        click.echo(f'Database {self._path} is OK.')
-        self._contexts = {'default': Context(self, 'default')}
-        self._active_context = 'default'
+        click.echo(f"Database {self._path} is OK.")
+        self._contexts = {"default": Context(self, "default")}
+        self._active_context = "default"
 
     def switch_context(self, context_name):
-        context_name = context_name or 'default'
+        context_name = context_name or "default"
         if self._active_context != context_name:
             self._contexts[self._active_context].flush_pipeline()
         if context_name not in self._contexts:
@@ -116,14 +120,16 @@ class StatsDB:
 
     def increment_on_disk(self, context_name, counters):
         with sqlite3.connect(self._path) as con:
-            for n, table in ((1, 'keys'), (2, 'bigrams'), (3, 'trigrams')):
-                a_column_names = ', '.join(f'a{i + 1}' for i in range(n))
-                question_marks = ', '.join(('?',) * n)
-                q = (f'INSERT INTO {table} (count, {a_column_names}, context) '
-                     f'VALUES (?, {question_marks}, ?) '
-                     f'ON CONFLICT (context, {a_column_names}) DO UPDATE '
-                     'SET count = count + ? '
-                     f'WHERE ({a_column_names}, context) '
-                     f'   == ({question_marks}, ?)')
+            for n, table in ((1, "keys"), (2, "bigrams"), (3, "trigrams")):
+                a_column_names = ", ".join(f"a{i + 1}" for i in range(n))
+                question_marks = ", ".join(("?",) * n)
+                q = (
+                    f"INSERT INTO {table} (count, {a_column_names}, context) "
+                    f"VALUES (?, {question_marks}, ?) "
+                    f"ON CONFLICT (context, {a_column_names}) DO UPDATE "
+                    "SET count = count + ? "
+                    f"WHERE ({a_column_names}, context) "
+                    f"   == ({question_marks}, ?)"
+                )
                 for ngram, count in counters[n - 1].items():
                     con.execute(q, ((count,) + ngram + (context_name,)) * 2)

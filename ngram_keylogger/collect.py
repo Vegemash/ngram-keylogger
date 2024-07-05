@@ -10,33 +10,33 @@ import evdev
 import ngram_keylogger
 
 
-def collect(device_paths, db_path, config):
+def collect(device_paths, db_path, config) -> None:
     config = ngram_keylogger.config.read(config)
-    action_generator = config['action_generator']
+    action_generator = config["action_generator"]
 
     statsdb = ngram_keylogger.db.StatsDB(db_path)
     event_and_extras_queue = asyncio.Queue()
 
     async def shutdown(sig, loop):
-        click.echo(f'Caught {sig.name}')
-        click.echo('Stopping keystroke collection...')
+        click.echo(f"Caught {sig.name}")
+        click.echo("Stopping keystroke collection...")
         for task in asyncio.all_tasks():
             if task is not asyncio.current_task():
                 task.cancel()
-        click.echo('Flushing statistics...')
+        click.echo("Flushing statistics...")
         statsdb.save_all_to_disk()
-        click.echo('Stopping...')
+        click.echo("Stopping...")
         await event_and_extras_queue.join()
         loop.call_soon_threadsafe(loop.stop)
 
     async def collect_events(device_path):
         while True:
             try:
-                click.echo(f'Opening device {device_path}...')
+                click.echo(f"Opening device {device_path}...")
                 device = evdev.InputDevice(device_path)
-                click.echo(f'Opened device {device_path}.')
+                click.echo(f"Opened device {device_path}.")
             except OSError:
-                click.echo(f'Could not open {device_path}.')
+                click.echo(f"Could not open {device_path}.")
                 await asyncio.sleep(15)
                 continue
             try:
@@ -44,7 +44,7 @@ def collect(device_paths, db_path, config):
                     # click.echo(evdev.categorize(event), sep=': ')
                     await event_and_extras_queue.put((event, {}))
             except OSError:
-                click.echo(f'Lost device {device_path}.')
+                click.echo(f"Lost device {device_path}.")
                 await asyncio.sleep(5)
 
     async def unwind_queue(event_and_extras_queue):
@@ -58,8 +58,9 @@ def collect(device_paths, db_path, config):
 
     loop = asyncio.get_event_loop()
     for sig in signal.SIGINT, signal.SIGTERM, signal.SIGHUP:
-        loop.add_signal_handler(sig, lambda sig=sig:
-                                asyncio.create_task(shutdown(sig, loop)))
+        loop.add_signal_handler(
+            sig, lambda sig=sig: asyncio.create_task(shutdown(sig, loop))
+        )
 
     async def process_actions():
         gen = action_generator(unwind_queue(event_and_extras_queue))
@@ -68,7 +69,8 @@ def collect(device_paths, db_path, config):
                 statsdb.account_for_action(action, context)
             else:
                 statsdb.flush_pipeline()
+
     try:
         loop.run_until_complete(process_actions())
     except asyncio.exceptions.CancelledError:
-        click.echo('Stopped.')
+        click.echo("Stopped.")
