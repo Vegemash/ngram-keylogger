@@ -1,0 +1,2 @@
+[console_scripts]
+ngram-keylogger = ngram_keylogger.app:cli

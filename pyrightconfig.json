@@ -4,17 +4,9 @@
   ],
 
   "exclude": [
-    "**/node_modules",
     "**/__pycache__"
   ],
-
-  "ignore": [
-    "src/oldstuff"
-  ],
-
-  "defineConstant": {
-    "DEBUG": true
-  },
+  "stubshedPath": "tmp/typeshed",
 
   "reportMissingImports": true,
   "reportMissingTypeStubs": false,

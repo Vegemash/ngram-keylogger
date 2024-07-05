@@ -1,0 +1,14 @@
+Metadata-Version: 2.1
+Name: ngram-keylogger
+Version: 0.0.1
+Summary: ngram-keylogger: typing stats that don't leak passwords
+Home-page: https://github.com/t184256/ngram-keylogger
+Author: Alexander Sosedkin
+Author-email: monk@unboiled.info
+License-File: LICENSE
+License-File: AUTHORS
+Requires-Dist: Click
+Requires-Dist: evdev
+Requires-Dist: pyxdg
+Requires-Dist: psutil
+Requires-Dist: i3ipc

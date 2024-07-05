@@ -1,0 +1,5 @@
+Click
+evdev
+pyxdg
+psutil
+i3ipc

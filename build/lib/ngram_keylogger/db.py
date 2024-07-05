@@ -44,7 +44,7 @@ class Context:
 
     def flush_pipeline(self):
         """Called when inactivity/context switch is detected."""
-        for _ in range(NGRAM_MAX):
+        for _ in range(3):
             self.account_for_action(ngram_keylogger.NOTHING)
 
     def account_for_action(self, action: str) -> None:
